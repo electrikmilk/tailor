@@ -1,0 +1,15 @@
+[
+  {
+    "name": "gecko",
+    "url": "https://hg.mozilla.org/mozilla-central/raw-file/tip/layout/style/res/html.css"
+  },
+  {
+    "name": "webkit",
+    "url": "https://trac.webkit.org/browser/webkit/trunk/Source/WebCore/css/html.css?format=txt"
+  },
+  {
+    "name": "blink",
+    "url": "https://chromium.googlesource.com/chromium/blink/+/72fef91ac1ef679207f51def8133b336a6f6588f/Source/core/css/html.css?format=TEXT",
+    "encoded": true
+  }
+]

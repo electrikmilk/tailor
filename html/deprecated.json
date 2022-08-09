@@ -1,0 +1,22 @@
+{
+  "applet":"Use the object tag instead.",
+  "basefont": "No alternative.",
+  "big": "Use css styles instead.",
+  "blink": "Use CSS animation with the display property instead.",
+  "center": "Use the text-align property instead.",
+  "dir": "Use the ul or ol tag and the list-style property.",
+  "embed": "Use the object tag instead.",
+  "font": "Use the font-family property instead.",
+  "frame": "Use the iframe tag instead.",
+  "frameset": "No alternative.",
+  "isindex": "No alternative.",
+  "noframes": "No alternative.",
+  "marquee": "It's not the 90's anymore (Use CSS animation with transform properties instead).",
+  "menu": "Use the ul tag instead.",
+  "plaintext": "Use the pre tag instead.",
+  "s": "Use the text-decoration property if applicable, or use the del tag instead.",
+  "strike": "Use the text-decoration property if applicable, or use the del tag instead.",
+  "tt": "Use the font-family property or the kbd, code, or spam tag instead.",
+  "u": "Use the text-decoration property instead.",
+  "xmp": "Use the pre tag instead."
+}
