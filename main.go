@@ -24,16 +24,19 @@ func main() {
 	}
 }
 
-func fatal(message string) {
+func errorf(message string, vars ...any) {
+	message = fmt.Sprintf(message, vars...)
 	fmt.Println(style(" FATAL ", BG_RED, BLACK, BOLD) + " " + style(message, RED, BOLD) + "\n")
 	os.Exit(1)
 }
 
-func problem(message string) {
+func issuef(message string, vars ...any) {
+	message = fmt.Sprintf(message, vars...)
 	fmt.Println(style(" ISSUE ", BG_RED, BLACK, BOLD) + " " + style(message, RED, BOLD) + "\n")
 }
 
-func warning(message string) {
+func warningf(message string, vars ...any) {
+	message = fmt.Sprintf(message, vars...)
 	fmt.Println(style(" WARNING ", BG_YELLOW, BLACK, BOLD) + " " + style(message, YELLOW) + "\n")
 }
 

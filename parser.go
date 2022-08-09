@@ -10,7 +10,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
 )
 
 var content string
@@ -48,7 +47,7 @@ func parser(filename string) {
 		EOL = "\r\n"
 	}
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		fatal(fmt.Sprintf("error! file %s does not exist.\n", filename))
+		errorf("error! file %s does not exist.", filename)
 	}
 	bytes, err := os.ReadFile(filename)
 	handle(err)
@@ -149,6 +148,8 @@ func collectRule() (rul rule) {
 		} else {
 			if currentChar != "\t" && currentChar != EOL {
 				selector += currentChar
+			} else if currentChar == EOL {
+				line++
 			}
 			advance()
 		}
@@ -170,6 +171,8 @@ func collectDeclaration() (dec declaration) {
 					}
 					advance()
 				}
+			} else if currentChar == EOL {
+				line++
 			}
 		} else {
 			if len(value) == 0 && currentChar == " " {
@@ -183,6 +186,7 @@ func collectDeclaration() (dec declaration) {
 				continue
 			}
 			if currentChar == EOL {
+				line++
 				if len(value) == 0 {
 					parserError("no value given to property")
 				}
@@ -198,6 +202,8 @@ func collectDeclaration() (dec declaration) {
 	}
 	if currentChar != EOL {
 		advance()
+	} else if currentChar == EOL {
+		line++
 	}
 	dec = declaration{
 		property: property,
@@ -260,6 +266,9 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 	}
 	requestedChar = getChar(nextChar)
 	for requestedChar == " " || requestedChar == "\t" || requestedChar == EOL {
+		if requestedChar == EOL {
+			line++
+		}
 		if reverse == true {
 			nextChar -= 1
 		} else {
@@ -270,13 +279,25 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 	return
 }
 
-func wait() {
-	time.Sleep(100 * time.Millisecond)
-}
-
 func parserError(error string) {
-	fmt.Printf("%d:%d | char: %s, next: %s, prev: %s\n", line, char, prev(1), next(1), currentChar)
-	panic(error)
+	fmt.Println("\n" + style(error, RED, BOLD) + "\n")
+	var lines []string = strings.Split(content, EOL)
+	var prev int = line - 1
+	var next int = line + 1
+	if len(lines) > prev {
+		fmt.Printf(style(fmt.Sprintf("%d |", prev), DIM))
+		fmt.Printf("%s\n", lines[prev])
+	}
+	fmt.Printf(style(fmt.Sprintf("%d |", line), DIM))
+	fmt.Println(style(fmt.Sprintf("%s", lines[line]), RED, BOLD))
+	if len(lines) >= next {
+		fmt.Printf(style(fmt.Sprintf("%d |", line+1), DIM))
+		fmt.Printf("%s\n", lines[next])
+	}
+	fmt.Printf("\n")
+	// fmt.Printf("%d:%d | char: %s, next: %s, prev: %s\n", line, char, prev(1), next(1), currentChar)
+	// panic(error)
+	os.Exit(1)
 }
 
 func printCurrentChar() {
