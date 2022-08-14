@@ -2,8 +2,9 @@
 
 This is a work-in-progress CSS minifier and optimizer. The parser and resulting minifier are the most complete, while the optimization is in progress.
 
+## Usage
+
 ```console
-go build
 ./tailor file.css
 ```
 
