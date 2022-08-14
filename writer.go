@@ -31,7 +31,7 @@ func addDeclaration(d declaration, last bool) {
 	}
 }
 
-func writeToFile(filename string) {
+func writeToFile() {
 	for _, at := range ats {
 		css += fmt.Sprintf("@%s \"%s\";", at.property, at.value)
 	}

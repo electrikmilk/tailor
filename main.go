@@ -11,13 +11,20 @@ import (
 	"strings"
 )
 
+var filename string
 var css string
 
 func main() {
+	registerArg("c", "checker")
+	handleArgs()
 	if len(os.Args) > 1 {
-		parser(os.Args[1])
-		check()
-		writeToFile(os.Args[1])
+		filename = os.Args[1]
+		parser()
+		if arg("warnings") {
+			check()
+		}
+		progressf("Minifying", "Minifying %s...", filename)
+		writeToFile()
 	} else {
 		fmt.Println("USAGE: tailor [FILE]")
 		return
@@ -26,23 +33,29 @@ func main() {
 
 func errorf(message string, vars ...any) {
 	message = fmt.Sprintf(message, vars...)
-	fmt.Println(style(" FATAL ", BG_RED, BLACK, BOLD) + " " + style(message, RED, BOLD) + "\n")
+	fmt.Println("\n" + style(" FATAL ", BG_RED, BLACK, BOLD) + " " + style(message, RED, BOLD))
 	os.Exit(1)
 }
 
 func issuef(message string, vars ...any) {
 	message = fmt.Sprintf(message, vars...)
-	fmt.Println(style(" ISSUE ", BG_RED, BLACK, BOLD) + " " + style(message, RED, BOLD) + "\n")
+	fmt.Println("\n" + style(" ISSUE ", BG_RED, BLACK, BOLD) + " " + style(message, RED, BOLD))
 }
 
 func warningf(message string, vars ...any) {
 	message = fmt.Sprintf(message, vars...)
-	fmt.Println(style(" WARNING ", BG_YELLOW, BLACK, BOLD) + " " + style(message, YELLOW) + "\n")
+	fmt.Println("\n" + style(" WARNING ", BG_YELLOW, BLACK, BOLD) + " " + style(message, YELLOW))
+}
+
+func progressf(label string, message string, vars ...any) {
+	message = fmt.Sprintf(message, vars...)
+	label = strings.ToUpper(fmt.Sprintf(" %s ", label))
+	fmt.Println("\n" + style(label, BG_BLUE, BLACK, BOLD) + " " + style(message, BLUE))
 }
 
 func success(label string, message string) {
 	label = strings.ToUpper(fmt.Sprintf(" %s ", label))
-	fmt.Println(style(label, BG_GREEN, BLACK, BOLD) + " " + style(message, GREEN) + "\n")
+	fmt.Println("\n" + style(label, BG_GREEN, BLACK, BOLD) + " " + style(message, GREEN))
 }
 
 func handle(err error) {
