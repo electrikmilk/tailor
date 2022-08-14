@@ -1164,7 +1164,7 @@
   "display": {
     "moz": false,
     "webkit": false,
-    "syntax": "(inline)|(block)|(contents)|(flex)|(grid)|(inline-block)|(inline-flex)|(inline-grid)|(inline-table)|(list-item)|(run-in)|(table)|(table-caption)|(table-column-group)|(table-header-group)|(table-footer-group)|(table-row-group)|(table-cell)|(table-column)|(table-row)|(none)|(initial)|(inherit)",
+    "syntax": "(inline)|(block)|(contents)|(flex)|(grid)|(inline-block)|(inline-flex)|(inline-grid)|(inline-table)|(list-item)|(run-in)|(box)|(table)|(table-caption)|(table-column-group)|(table-header-group)|(table-footer-group)|(table-row-group)|(table-cell)|(table-column)|(table-row)|(none)|(initial)|(inherit)",
     "initial": "",
     "values": [
       "inline",
@@ -1179,6 +1179,7 @@
       "list-item",
       "run-in",
       "table",
+      "box",
       "table-caption",
       "table-column-group",
       "table-header-group",
@@ -1519,14 +1520,15 @@
   "grid-auto-flow": {
     "moz": false,
     "webkit": false,
-    "syntax": "(row)|(column)|(dense)|(row dense)|(column dense)",
+    "syntax": "(row)|(column)|(dense)|(row dense)|(column dense)|(unset)",
     "initial": "row",
     "values": [
       "row",
       "column",
       "dense",
       "row dense",
-      "column dense"
+      "column dense",
+      "unset"
     ]
   },
   "grid-auto-rows": {
@@ -2398,15 +2400,21 @@
   "text-align": {
     "moz": false,
     "webkit": false,
-    "syntax": "(left)|(right)|(center)|(justify)|(initial)|(inherit)",
+    "syntax": "(left)|(right)|(center)|(start)|(end)|(justify)|(justify-all)|(match-parent)|(initial)|(inherit)|(revert)|(unset)",
     "initial": "left if direction is ltr, and right if direction is rtl",
     "values": [
       "left",
       "right",
       "center",
+      "start",
+      "end",
       "justify",
+      "justify-all",
       "initial",
-      "inherit"
+      "inherit",
+      "match-parent",
+      "revert",
+      "unset"
     ]
   },
   "text-align-last": {
