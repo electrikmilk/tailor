@@ -150,7 +150,7 @@ func checkDeclaration(rule *rule, declaration *declaration) {
 
 func downloadProperties() {
 	fmt.Printf("Downloading... ")
-	resp, downloadErr := http.Get("https://raw.githubusercontent.com/electrikmilk/tailor/main/css/properties.json")
+	resp, downloadErr := http.Get("https://raw.githubusercontent.com/electrikmilk/tailor/main/properties.json")
 	if downloadErr != nil {
 		fmt.Printf("\n")
 		panic(downloadErr)
