@@ -1,0 +1,33 @@
+@charset "UTF-8";
+
+@import "variables.css";
+
+@media screen {
+    .rule {
+        property: value;
+    }
+}
+
+@supports (text-align: unset) {
+    .rule {
+        property: value;
+    }
+}
+
+/*@-webkit-keyframes blink {*/
+/*    0% {*/
+/*        property: value*/
+/*    }*/
+/*    100% {*/
+/*        property: value*/
+/*    }*/
+/*}*/
+
+/*@keyframes blink {*/
+/*    0% {*/
+/*        property: value*/
+/*    }*/
+/*    100% {*/
+/*        property: value*/
+/*    }*/
+/*}*/
