@@ -5,7 +5,7 @@
 package main
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -19,6 +19,12 @@ func main() {
 	handleArgs()
 	if len(os.Args) > 1 {
 		filename = os.Args[1]
+		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+			errorf("File %s does not exist.", filename)
+		}
+		if strings.Split(filename, ".")[1] != "css" {
+			errorf("Non-CSS file: %s", filename)
+		}
 		parser()
 		if arg("warnings") {
 			check()
@@ -64,9 +70,9 @@ func handle(err error) {
 	}
 }
 
-func loadJSON(filename string, ref any) {
-	file, err := os.ReadFile(filename)
-	handle(err)
-	err = json.Unmarshal(file, ref)
-	handle(err)
-}
+// func loadJSON(filename string, ref any) {
+// 	file, err := os.ReadFile(filename)
+// 	handle(err)
+// 	err = json.Unmarshal(file, ref)
+// 	handle(err)
+// }

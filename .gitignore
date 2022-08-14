@@ -16,5 +16,7 @@
 
 .DS_Store
 /.idea/
-/tests/
+/src/tests/
 /defaults/
+/src/tailor
+/tests/*.min.css

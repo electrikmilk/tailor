@@ -7,7 +7,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -47,12 +46,6 @@ var EOL = "\n"
 func parser() {
 	if runtime.GOOS == "windows" {
 		EOL = "\r\n"
-	}
-	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		errorf("File %s does not exist.", filename)
-	}
-	if strings.Split(filename, ".")[1] != "css" {
-		errorf("Non-CSS file: %s", filename)
 	}
 	bytes, err := os.ReadFile(filename)
 	handle(err)

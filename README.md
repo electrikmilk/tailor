@@ -16,3 +16,10 @@ go build
  - Suggest alternatives to deprecated tags
  - Check if HTML tag selector is a valid HTML tag
  - Warn about redundant use of measurements (eg. 0px)
+
+### Tests
+
+| Test                       | Time  |
+|----------------------------|-------|
+| 7,271 lines with checks    | 0.70s |
+| 7,271 lines without checks | 0.60s |
