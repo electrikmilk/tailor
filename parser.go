@@ -2,6 +2,8 @@
  * Copyright (c) 2022 Brandon Jordan
  */
 
+// TODO: parse variables
+
 package main
 
 import (
@@ -42,24 +44,25 @@ var queries []media
 
 var EOL = "\n"
 
-func parser(filename string) {
+func parser() {
 	if runtime.GOOS == "windows" {
 		EOL = "\r\n"
 	}
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		errorf("error! file %s does not exist.", filename)
+		errorf("File %s does not exist.", filename)
+	}
+	if strings.Split(filename, ".")[1] != "css" {
+		errorf("Non-CSS file: %s", filename)
 	}
 	bytes, err := os.ReadFile(filename)
 	handle(err)
+	progressf("Parsing", "Parsing %s...", filename)
 	content = string(bytes)
 	chars = strings.Split(content, "")
 	char = 0
 	currentChar = chars[0]
 	for currentChar != "" {
 		if currentChar == " " || currentChar == "\t" || currentChar == EOL {
-			if currentChar == EOL {
-				line++
-			}
 			advance()
 		} else if currentChar == "/" && next(1) == "*" {
 			waitForComment()
@@ -79,7 +82,7 @@ func collectQuery() (dec declaration) {
 		property += currentChar
 		advance()
 	}
-	if property == "media" {
+	if property == "media" || property == "supports" || property == "keyframes" {
 		for currentChar != "{" {
 			value += currentChar
 			advance()
@@ -89,9 +92,6 @@ func collectQuery() (dec declaration) {
 		var mediaRules []rule
 		for currentChar != "" {
 			if currentChar == " " || currentChar == "\t" || currentChar == EOL {
-				if currentChar == EOL {
-					line++
-				}
 				advance()
 			} else if currentChar == "/" && next(1) == "*" {
 				waitForComment()
@@ -148,8 +148,6 @@ func collectRule() (rul rule) {
 		} else {
 			if currentChar != "\t" && currentChar != EOL {
 				selector += currentChar
-			} else if currentChar == EOL {
-				line++
 			}
 			advance()
 		}
@@ -171,14 +169,20 @@ func collectDeclaration() (dec declaration) {
 					}
 					advance()
 				}
-			} else if currentChar == EOL {
-				line++
 			}
 		} else {
 			if len(value) == 0 && currentChar == " " {
 				advance()
 				continue
 			}
+			// TODO: collect variable property value (e.g. url(), attr())
+			// if currentChar == "(" {
+			// 	fmt.Println(currentChar)
+			// for currentChar != ")" {
+			// 	value += currentChar
+			// 	advance()
+			// }
+			// }
 			if currentChar == "\"" {
 				advance()
 				value = collectString()
@@ -186,24 +190,21 @@ func collectDeclaration() (dec declaration) {
 				continue
 			}
 			if currentChar == EOL {
-				line++
 				if len(value) == 0 {
-					parserError("no value given to property")
+					parserError(fmt.Sprintf("No value given to property: %s", property))
 				}
 				break
 			}
 			if currentChar != "\t" && currentChar != ":" {
 				value += currentChar
 			} else {
-				parserError("invalid property value")
+				parserError(fmt.Sprintf("Invalid property value: %s", value))
 			}
 		}
 		advance()
 	}
 	if currentChar != EOL {
 		advance()
-	} else if currentChar == EOL {
-		line++
 	}
 	dec = declaration{
 		property: property,
@@ -235,6 +236,9 @@ func advance() {
 	char++
 	if len(chars) > char {
 		currentChar = chars[char]
+		if currentChar == EOL {
+			line++
+		}
 	} else {
 		currentChar = ""
 	}
@@ -253,9 +257,9 @@ func next(mov int) string {
 	return seek(&mov, false)
 }
 
-func prev(mov int) string {
-	return seek(&mov, true)
-}
+// func prev(mov int) string {
+// 	return seek(&mov, true)
+// }
 
 func seek(mov *int, reverse bool) (requestedChar string) {
 	var nextChar int = char
@@ -266,9 +270,6 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 	}
 	requestedChar = getChar(nextChar)
 	for requestedChar == " " || requestedChar == "\t" || requestedChar == EOL {
-		if requestedChar == EOL {
-			line++
-		}
 		if reverse == true {
 			nextChar -= 1
 		} else {
@@ -282,17 +283,19 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 func parserError(error string) {
 	fmt.Println("\n" + style(error, RED, BOLD) + "\n")
 	var lines []string = strings.Split(content, EOL)
-	var prev int = line - 1
-	var next int = line + 1
+	var offsetLine = line + 1
+	var prev int = offsetLine - 1
+	var next int = offsetLine + 1
 	if len(lines) > prev {
 		fmt.Printf(style(fmt.Sprintf("%d |", prev), DIM))
-		fmt.Printf("%s\n", lines[prev])
+		fmt.Printf("%s\n", lines[line-1])
 	}
-	fmt.Printf(style(fmt.Sprintf("%d |", line), DIM))
+	fmt.Printf("%d ", offsetLine)
+	fmt.Printf(style("|", DIM))
 	fmt.Println(style(fmt.Sprintf("%s", lines[line]), RED, BOLD))
 	if len(lines) >= next {
-		fmt.Printf(style(fmt.Sprintf("%d |", line+1), DIM))
-		fmt.Printf("%s\n", lines[next])
+		fmt.Printf(style(fmt.Sprintf("%d |", next), DIM))
+		fmt.Printf("%s\n", lines[line+1])
 	}
 	fmt.Printf("\n")
 	// fmt.Printf("%d:%d | char: %s, next: %s, prev: %s\n", line, char, prev(1), next(1), currentChar)
@@ -300,20 +303,20 @@ func parserError(error string) {
 	os.Exit(1)
 }
 
-func printCurrentChar() {
-	var char string
-	switch currentChar {
-	case "\t":
-		char = "TAB"
-		break
-	case " ":
-		char = "SPACE"
-		break
-	case EOL:
-		char = "EOL"
-		break
-	default:
-		char = currentChar
-	}
-	fmt.Println(char)
-}
+// func printCurrentChar() {
+// 	var char string
+// 	switch currentChar {
+// 	case "\t":
+// 		char = "TAB"
+// 		break
+// 	case " ":
+// 		char = "SPACE"
+// 		break
+// 	case EOL:
+// 		char = "EOL"
+// 		break
+// 	default:
+// 		char = currentChar
+// 	}
+// 	fmt.Println(char)
+// }
