@@ -5,43 +5,50 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 )
 
 var units = []string{"cm", "mm", "in", "px", "pt", "pc", "em", "ex", "ch", "rem", "vw", "vh", "vmin", "vmax", "%"}
-
 var properties interface{}
-var tags interface{}
-var deprecated interface{}
-var noStyle interface{}
 
 func check() {
-	loadJSON("css/properties.json", &properties)
-	loadJSON("html/tags.json", &tags)
-	loadJSON("html/deprecated.json", &deprecated)
-	loadJSON("html/no_style.json", &noStyle)
-	for _, at := range ats {
-		if at.property == "import" {
-			if _, err := os.Stat(at.value); errors.Is(err, os.ErrNotExist) {
-				warningf("Unable to find import \"%s\".", at.value)
+	downloadProperties()
+	makeDeprecated()
+	if len(ats) > 0 {
+		for _, at := range ats {
+			if at.property == "import" {
+				warningf("@import \"%s\": Avoid using @import as it is render-blocking. Multiple <link> tags within HTML is more efficient and loads CSS files in parallel.", at.value)
+				if _, err := os.Stat(at.value); errors.Is(err, os.ErrNotExist) {
+					issuef("Unable to find import \"%s\".", at.value)
+				} else {
+					// maybe?
+					// parser(at.value)
+				}
 			}
 		}
 	}
-	for _, q := range queries {
-		for _, r := range q.rules {
+	if len(queries) > 0 {
+		for _, q := range queries {
+			for _, r := range q.rules {
+				checkSelector(&r)
+				for _, d := range r.declarations {
+					checkDeclaration(&r, &d)
+				}
+			}
+		}
+	}
+	if len(rules) > 0 {
+		for _, r := range rules {
 			checkSelector(&r)
 			for _, d := range r.declarations {
 				checkDeclaration(&r, &d)
 			}
-		}
-	}
-	for _, r := range rules {
-		checkSelector(&r)
-		for _, d := range r.declarations {
-			checkDeclaration(&r, &d)
 		}
 	}
 }
@@ -49,7 +56,7 @@ func check() {
 func checkSelector(rule *rule) {
 	if !strings.ContainsAny(rule.selector, ".#,: [*") {
 		var validHTMLTag bool = false
-		for _, tag := range tags.([]interface{}) {
+		for _, tag := range tags {
 			if tag == strings.Split(rule.selector, ":")[0] {
 				validHTMLTag = true
 			}
@@ -57,14 +64,13 @@ func checkSelector(rule *rule) {
 		if validHTMLTag == false {
 			issuef("\"%s\": Not a valid HTML tag selector.", rule.selector)
 		}
-		for _, tag := range noStyle.([]interface{}) {
+		for _, tag := range noStyle {
 			if tag == strings.Split(rule.selector, ":")[0] {
 				issuef("\"%s\": Not a stylable HTML tag.", rule.selector)
 			}
 		}
 	}
-	var depMap = deprecated.(map[string]interface{})
-	if dep, found := depMap[rule.selector]; found {
+	if dep, found := deprecated[rule.selector]; found {
 		issuef("Deprecated HTML tag \"%s\": %s", rule.selector, dep)
 	}
 	// TODO: make sure values of attribute selectors need quotes
@@ -79,21 +85,23 @@ func checkSelector(rule *rule) {
 }
 
 func checkDeclaration(rule *rule, declaration *declaration) {
-	var stripBrowser = strings.ReplaceAll(declaration.property, "-moz-", "")
-	stripBrowser = strings.ReplaceAll(stripBrowser, "-webkit-", "")
+	var propertyStripBrowser = strings.ReplaceAll(declaration.property, "-moz-", "")
+	propertyStripBrowser = strings.ReplaceAll(propertyStripBrowser, "-webkit-", "")
+	var valueStripBrowser = strings.ReplaceAll(declaration.value, "-moz-", "")
+	valueStripBrowser = strings.ReplaceAll(valueStripBrowser, "-webkit-", "")
 	var propMap = properties.(map[string]interface{})
-	if def, found := propMap[stripBrowser]; found {
+	if def, found := propMap[propertyStripBrowser]; found {
 		var definition = def.(map[string]interface{})
 		if definition["initial"] != "see individual properties" {
 			if definition["initial"] == declaration.value {
 				warningf("\"%s\": Property \"%s\" set to it's initial value.", rule.selector, declaration.property)
 			}
 		}
-		if declaration.property != "content" {
+		if declaration.property != "content" && !strings.ContainsAny(declaration.value, "()") {
 			var validValue = false
 			for _, val := range definition["values"].([]interface{}) {
 				var definedValue string = fmt.Sprintf("%v", val)
-				var rawValue = strings.Trim(strings.Replace(declaration.value, "!important", "", 1), " ")
+				var rawValue = strings.Trim(strings.Replace(valueStripBrowser, "!important", "", 1), " ")
 				if rawValue == definedValue {
 					validValue = true
 					break
@@ -123,7 +131,7 @@ func checkDeclaration(rule *rule, declaration *declaration) {
 		warningf("\"%s\": Unknown property \"%s\".", rule.selector, declaration.property)
 	}
 	if strings.Contains(declaration.property, "-moz") || strings.Contains(declaration.property, "-webkit") {
-		if def, found := propMap[stripBrowser]; found {
+		if def, found := propMap[propertyStripBrowser]; found {
 			var definition = def.(map[string]interface{})
 			if definition["moz"] == false && strings.Contains(declaration.property, "-moz") {
 				warningf("\"%s\": Unknown -moz- property \"%s\".", rule.selector, declaration.property)
@@ -138,4 +146,22 @@ func checkDeclaration(rule *rule, declaration *declaration) {
 			warningf("\"%s\": unit of measurement \"%s\" after 0 is redundant on \"%s\".", rule.selector, unit, declaration.property)
 		}
 	}
+}
+
+func downloadProperties() {
+	fmt.Printf("Downloading... ")
+	resp, downloadErr := http.Get("https://raw.githubusercontent.com/electrikmilk/tailor/main/css/properties.json")
+	if downloadErr != nil {
+		fmt.Printf("\n")
+		panic(downloadErr)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		handle(err)
+	}(resp.Body)
+	fmt.Printf("done.\n")
+	body, err := io.ReadAll(resp.Body)
+	handle(err)
+	err = json.Unmarshal(body, &properties)
+	handle(err)
 }
