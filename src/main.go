@@ -26,13 +26,13 @@ func main() {
 			errorf("Non-CSS file: %s", filename)
 		}
 		parser()
-		if arg("warnings") {
+		if arg("checker") {
 			check()
 		}
 		progressf("Minifying", "Minifying %s...", filename)
 		writeToFile()
 	} else {
-		fmt.Println("USAGE: tailor [FILE]")
+		usage()
 		return
 	}
 }

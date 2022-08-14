@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -34,6 +35,14 @@ func handleArgs() {
 				}
 			}
 		}
+	}
+}
+
+func usage() {
+	fmt.Println("USAGE: tailor [FILE]")
+	fmt.Printf("\nOptions:\n")
+	for short, long := range registered {
+		fmt.Printf("\t-%s --%s\n", short, long)
 	}
 }
 
