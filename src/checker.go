@@ -149,11 +149,7 @@ func checkDeclaration(rule *rule, declaration *declaration) {
 }
 
 func downloadProperties() {
-<<<<<<< Updated upstream
-	fmt.Printf("Downloading... ")
-=======
 	fmt.Printf("Downloading property list... ")
->>>>>>> Stashed changes
 	resp, downloadErr := http.Get("https://raw.githubusercontent.com/electrikmilk/tailor/main/properties.json")
 	if downloadErr != nil {
 		fmt.Printf("\n")
