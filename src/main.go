@@ -15,8 +15,7 @@ var filename string
 var css string
 
 func main() {
-	registerArg("c", "checker")
-	handleArgs()
+	registerArg("c", "checker", "Do extra checks on the CSS file.")
 	if len(os.Args) > 1 {
 		filename = os.Args[1]
 		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {

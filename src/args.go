@@ -6,62 +6,88 @@ import (
 	"strings"
 )
 
-var args map[string]string
-var registered map[string]string
-
-func init() {
-	registered = make(map[string]string)
-	args = make(map[string]string)
+type argument struct {
+	name        string
+	short       string
+	description string
 }
 
-func handleArgs() {
+var args map[string]string
+var registered []argument
+
+var customUsage string
+
+func init() {
+	args = make(map[string]string)
 	if len(os.Args) > 1 {
-		for i, arg := range os.Args {
+		for i, a := range os.Args {
 			if i != 0 {
-				arg = strings.TrimPrefix(arg, "--")
-				arg = strings.TrimPrefix(arg, "-")
-				if long, ok := registered[arg]; ok {
-					arg = long
+				a = strings.TrimPrefix(a, "--")
+				a = strings.TrimPrefix(a, "-")
+				for _, r := range registered {
+					if r.name == a || r.short == a {
+						a = r.name
+						break
+					}
 				}
-				if strings.Contains(arg, "=") {
-					var keyValue []string = strings.Split(arg, "=")
+				if strings.Contains(a, "=") {
+					var keyValue []string = strings.Split(a, "=")
 					if len(keyValue) > 1 {
-						args[keyValue[0]] = keyValue[1]
+						args[a] = keyValue[1]
 					} else {
-						args[keyValue[0]] = ""
+						args[a] = ""
 					}
 				} else {
-					args[arg] = ""
+					args[a] = ""
 				}
 			}
 		}
 	}
 }
 
+// Prints a usage message based on the arguments and usage you have registered.
 func usage() {
-	fmt.Println("USAGE: tailor [FILE]")
+	fmt.Printf("USAGE: %s %s", os.Args[0], customUsage)
 	fmt.Printf("\nOptions:\n")
-	for short, long := range registered {
-		fmt.Printf("\t-%s --%s\n", short, long)
+	for _, arg := range registered {
+		fmt.Printf("\t-%s --%s\t%s\n", arg.short, arg.name, arg.description)
 	}
 }
 
-func registerArg(short string, long string) {
-	registered[short] = long
+// Register an argument
+func registerArg(name string, shorthand string, description string) {
+	for _, r := range registered {
+		if r.name == name {
+			panic(fmt.Sprintf("Argument %s is already registered!", name))
+		}
+	}
+	registered = append(registered, argument{
+		name:        name,
+		short:       shorthand,
+		description: description,
+	})
 }
 
-func arg(key string) bool {
+// Register a custom usage message.
+// It will be printed after USAGE: executable.
+func registerUsage(usage string) {
+	customUsage = usage
+}
+
+// Returns a boolean indicating if argument name was passed to your executable.
+func arg(name string) bool {
 	if len(args) > 0 {
-		if _, ok := args[key]; ok {
+		if _, ok := args[name]; ok {
 			return true
 		}
 	}
 	return false
 }
 
-func argValue(key string) (value string) {
+// Returns a string of the value of argument name if passed to your executable.
+func argValue(name string) (value string) {
 	if len(args) > 0 {
-		if val, ok := args[key]; ok {
+		if val, ok := args[name]; ok {
 			value = val
 		}
 	} else {
