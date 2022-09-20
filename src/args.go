@@ -28,12 +28,6 @@ func init() {
 			if i != 0 {
 				a = strings.TrimPrefix(a, "--")
 				a = strings.TrimPrefix(a, "-")
-				for _, r := range registered {
-					if r.name == a || r.short == a {
-						a = r.name
-						break
-					}
-				}
 				if strings.Contains(a, "=") {
 					var keyValue []string = strings.Split(a, "=")
 					if len(keyValue) > 1 {
@@ -83,6 +77,13 @@ func arg(name string) bool {
 	if len(args) > 0 {
 		if _, ok := args[name]; ok {
 			return true
+		}
+		for _, r := range registered {
+			if r.name == name {
+				if _, ok := args[r.short]; ok {
+					return true
+				}
+			}
 		}
 	}
 	return false
