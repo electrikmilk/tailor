@@ -9,7 +9,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 )
 
@@ -36,17 +35,10 @@ type media struct {
 }
 
 var rules []rule
-
 var ats []declaration
-
 var queries []media
 
-var EOL = "\n"
-
 func parser() {
-	if runtime.GOOS == "windows" {
-		EOL = "\r\n"
-	}
 	bytes, err := os.ReadFile(filename)
 	handle(err)
 	progressf("Parsing", "Parsing %s...", filename)
@@ -55,7 +47,7 @@ func parser() {
 	char = 0
 	currentChar = chars[0]
 	for currentChar != "" {
-		if currentChar == " " || currentChar == "\t" || currentChar == EOL {
+		if currentChar == " " || currentChar == "\t" || currentChar == eol {
 			advance()
 		} else if currentChar == "/" && next(1) == "*" {
 			waitForComment()
@@ -84,7 +76,7 @@ func collectQuery() (dec declaration) {
 		advance()
 		var mediaRules []rule
 		for currentChar != "" {
-			if currentChar == " " || currentChar == "\t" || currentChar == EOL {
+			if currentChar == " " || currentChar == "\t" || currentChar == eol {
 				advance()
 			} else if currentChar == "/" && next(1) == "*" {
 				waitForComment()
@@ -139,7 +131,7 @@ func collectRule() (rul rule) {
 			advance()
 			break
 		} else {
-			if currentChar != "\t" && currentChar != EOL {
+			if currentChar != "\t" && currentChar != eol {
 				selector += currentChar
 			}
 			advance()
@@ -153,9 +145,9 @@ func collectDeclaration() (dec declaration) {
 	var value string
 	for currentChar != ";" {
 		if len(property) == 0 {
-			if currentChar != " " && currentChar != "\t" && currentChar != EOL {
+			if currentChar != " " && currentChar != "\t" && currentChar != eol {
 				for currentChar != ":" {
-					if currentChar != " " && currentChar != "\t" && currentChar != EOL && currentChar != ":" {
+					if currentChar != " " && currentChar != "\t" && currentChar != eol && currentChar != ":" {
 						property += currentChar
 					} else {
 						parserError(fmt.Sprintf("invalid property: %s", property))
@@ -182,7 +174,7 @@ func collectDeclaration() (dec declaration) {
 				advance()
 				continue
 			}
-			if currentChar == EOL {
+			if currentChar == eol {
 				if len(value) == 0 {
 					parserError(fmt.Sprintf("No value given to property: %s", property))
 				}
@@ -196,7 +188,7 @@ func collectDeclaration() (dec declaration) {
 		}
 		advance()
 	}
-	if currentChar != EOL {
+	if currentChar != eol {
 		advance()
 	}
 	dec = declaration{
@@ -229,7 +221,7 @@ func advance() {
 	char++
 	if len(chars) > char {
 		currentChar = chars[char]
-		if currentChar == EOL {
+		if currentChar == eol {
 			line++
 		}
 	} else {
@@ -262,7 +254,7 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 		nextChar += *mov
 	}
 	requestedChar = getChar(nextChar)
-	for requestedChar == " " || requestedChar == "\t" || requestedChar == EOL {
+	for requestedChar == " " || requestedChar == "\t" || requestedChar == eol {
 		if reverse == true {
 			nextChar -= 1
 		} else {
@@ -275,7 +267,7 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 
 func parserError(error string) {
 	fmt.Println("\n" + style(error, RED, BOLD) + "\n")
-	var lines []string = strings.Split(content, EOL)
+	var lines []string = strings.Split(content, eol)
 	var offsetLine = line + 1
 	var prev int = offsetLine - 1
 	var next int = offsetLine + 1
@@ -305,8 +297,8 @@ func parserError(error string) {
 // 	case " ":
 // 		char = "SPACE"
 // 		break
-// 	case EOL:
-// 		char = "EOL"
+// 	case eol:
+// 		char = "eol"
 // 		break
 // 	default:
 // 		char = currentChar
