@@ -17,7 +17,7 @@ var content string
 var line int
 var char int
 var chars []string
-var currentChar string
+var currentChar rune
 
 type rule struct {
 	selector     string
@@ -44,14 +44,14 @@ func parser() {
 	progressf("Parsing", "Parsing %s...", filename)
 	content = string(bytes)
 	chars = strings.Split(content, "")
-	char = 0
-	currentChar = chars[0]
-	for currentChar != "" {
-		if currentChar == " " || currentChar == "\t" || currentChar == eol {
+	char = -1
+	advance()
+	for currentChar != -1 {
+		if currentChar == ' ' || currentChar == '\t' || currentChar == eolRune {
 			advance()
-		} else if currentChar == "/" && next(1) == "*" {
+		} else if currentChar == '/' && next(1) == '*' {
 			waitForComment()
-		} else if currentChar == "@" {
+		} else if currentChar == '@' {
 			collectQuery()
 		} else {
 			rules = append(rules, collectRule())
@@ -63,24 +63,24 @@ func collectQuery() (dec declaration) {
 	var property string
 	var value string
 	advance()
-	for currentChar != " " {
-		property += currentChar
+	for currentChar != ' ' {
+		property += string(currentChar)
 		advance()
 	}
 	if property == "media" || property == "supports" || property == "keyframes" {
-		for currentChar != "{" {
-			value += currentChar
+		for currentChar != '{' {
+			value += string(currentChar)
 			advance()
 		}
 		value = strings.Trim(value, " ")
 		advance()
 		var mediaRules []rule
-		for currentChar != "" {
-			if currentChar == " " || currentChar == "\t" || currentChar == eol {
+		for currentChar != -1 {
+			if currentChar == ' ' || currentChar == '\t' || currentChar == eolRune {
 				advance()
-			} else if currentChar == "/" && next(1) == "*" {
+			} else if currentChar == '/' && next(1) == '*' {
 				waitForComment()
-			} else if currentChar == "}" {
+			} else if currentChar == '}' {
 				advance()
 				break
 			} else {
@@ -94,7 +94,7 @@ func collectQuery() (dec declaration) {
 	} else {
 		char++
 		advance()
-		if currentChar != "\"" {
+		if currentChar != '"' {
 			value = collectString()
 		}
 		char++
@@ -110,11 +110,11 @@ func collectQuery() (dec declaration) {
 func collectRule() (rul rule) {
 	var selector string
 	var declarations []declaration
-	for currentChar != "" {
-		if currentChar == "{" {
+	for currentChar != -1 {
+		if currentChar == '{' {
 			advance()
-			for next(1) != "}" {
-				if next(1) == "/" {
+			for next(1) != '}' {
+				if next(1) == '/' {
 					waitForComment()
 					continue
 				}
@@ -125,14 +125,14 @@ func collectRule() (rul rule) {
 				selector:     selector,
 				declarations: declarations,
 			}
-			for currentChar != "}" {
+			for currentChar != '}' {
 				advance()
 			}
 			advance()
 			break
 		} else {
-			if currentChar != "\t" && currentChar != eol {
-				selector += currentChar
+			if currentChar != '\t' && currentChar != eolRune {
+				selector += string(currentChar)
 			}
 			advance()
 		}
@@ -143,12 +143,12 @@ func collectRule() (rul rule) {
 func collectDeclaration() (dec declaration) {
 	var property string
 	var value string
-	for currentChar != ";" {
+	for currentChar != ';' {
 		if len(property) == 0 {
-			if currentChar != " " && currentChar != "\t" && currentChar != eol {
-				for currentChar != ":" {
-					if currentChar != " " && currentChar != "\t" && currentChar != eol && currentChar != ":" {
-						property += currentChar
+			if currentChar != ' ' && currentChar != '\t' && currentChar != eolRune {
+				for currentChar != ':' {
+					if currentChar != ' ' && currentChar != '\t' && currentChar != eolRune && currentChar != ':' {
+						property += string(currentChar)
 					} else {
 						parserError(fmt.Sprintf("invalid property: %s", property))
 					}
@@ -156,7 +156,7 @@ func collectDeclaration() (dec declaration) {
 				}
 			}
 		} else {
-			if len(value) == 0 && currentChar == " " {
+			if len(value) == 0 && currentChar == ' ' {
 				advance()
 				continue
 			}
@@ -168,27 +168,27 @@ func collectDeclaration() (dec declaration) {
 			// 	advance()
 			// }
 			// }
-			if currentChar == "\"" {
+			if currentChar == '"' {
 				advance()
 				value = collectString()
 				advance()
 				continue
 			}
-			if currentChar == eol {
+			if currentChar == eolRune {
 				if len(value) == 0 {
 					parserError(fmt.Sprintf("No value given to property: %s", property))
 				}
 				break
 			}
-			if currentChar != "\t" && currentChar != ":" {
-				value += currentChar
+			if currentChar != '\t' && currentChar != ':' {
+				value += string(currentChar)
 			} else {
 				parserError(fmt.Sprintf("Invalid property value: %s", value))
 			}
 		}
 		advance()
 	}
-	if currentChar != eol {
+	if currentChar != eolRune {
 		advance()
 	}
 	dec = declaration{
@@ -199,16 +199,16 @@ func collectDeclaration() (dec declaration) {
 }
 
 func collectString() (str string) {
-	for currentChar != "\"" {
-		str += currentChar
+	for currentChar != '"' {
+		str += string(currentChar)
 		advance()
 	}
 	return
 }
 
 func waitForComment() {
-	for currentChar != "" {
-		if currentChar == "*" && next(1) == "/" {
+	for currentChar != -1 {
+		if currentChar == '*' && next(1) == '/' {
 			char++
 			advance()
 			break
@@ -220,25 +220,25 @@ func waitForComment() {
 func advance() {
 	char++
 	if len(chars) > char {
-		currentChar = chars[char]
-		if currentChar == eol {
+		currentChar = []rune(chars[char])[0]
+		if currentChar == eolRune {
 			line++
 		}
 	} else {
-		currentChar = ""
+		currentChar = -1
 	}
 }
 
-func getChar(c int) (char string) {
+func getChar(c int) (char rune) {
 	if len(chars) > c {
-		char = chars[c]
+		char = []rune(chars[c])[0]
 	} else {
-		char = ""
+		char = -1
 	}
 	return
 }
 
-func next(mov int) string {
+func next(mov int) rune {
 	return seek(&mov, false)
 }
 
@@ -246,7 +246,7 @@ func next(mov int) string {
 // 	return seek(&mov, true)
 // }
 
-func seek(mov *int, reverse bool) (requestedChar string) {
+func seek(mov *int, reverse bool) (requestedChar rune) {
 	var nextChar int = char
 	if reverse == true {
 		nextChar -= *mov
@@ -254,7 +254,7 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 		nextChar += *mov
 	}
 	requestedChar = getChar(nextChar)
-	for requestedChar == " " || requestedChar == "\t" || requestedChar == eol {
+	for requestedChar == ' ' || requestedChar == '\t' || requestedChar == eolRune {
 		if reverse == true {
 			nextChar -= 1
 		} else {
@@ -266,23 +266,23 @@ func seek(mov *int, reverse bool) (requestedChar string) {
 }
 
 func parserError(error string) {
-	fmt.Println("\n" + style(error, RED, BOLD) + "\n")
+	fmt.Println(eol + style(error, RED, BOLD) + eol)
 	var lines []string = strings.Split(content, eol)
 	var offsetLine = line + 1
 	var prev int = offsetLine - 1
 	var next int = offsetLine + 1
 	if len(lines) > prev {
 		fmt.Printf(style(fmt.Sprintf("%d |", prev), DIM))
-		fmt.Printf("%s\n", lines[line-1])
+		fmt.Print(lines[line-1] + eol)
 	}
 	fmt.Printf("%d ", offsetLine)
 	fmt.Printf(style("|", DIM))
 	fmt.Println(style(fmt.Sprintf("%s", lines[line]), RED, BOLD))
 	if len(lines) >= next {
 		fmt.Printf(style(fmt.Sprintf("%d |", next), DIM))
-		fmt.Printf("%s\n", lines[line+1])
+		fmt.Print(lines[line+1] + eol)
 	}
-	fmt.Printf("\n")
+	fmt.Print(eol)
 	// fmt.Printf("%d:%d | char: %s, next: %s, prev: %s\n", line, char, prev(1), next(1), currentChar)
 	// panic(error)
 	os.Exit(1)
@@ -291,17 +291,17 @@ func parserError(error string) {
 // func printCurrentChar() {
 // 	var char string
 // 	switch currentChar {
-// 	case "\t":
+// 	case '\t':
 // 		char = "TAB"
 // 		break
-// 	case " ":
+// 	case ' ':
 // 		char = "SPACE"
 // 		break
-// 	case eol:
+// 	case eolRune:
 // 		char = "eol"
 // 		break
 // 	default:
-// 		char = currentChar
+// 		char = string(currentChar)
 // 	}
 // 	fmt.Println(char)
 // }

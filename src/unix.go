@@ -7,3 +7,4 @@
 package main
 
 const eol = "\n"
+const eolRune = '\n'
