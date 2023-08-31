@@ -1,6 +1,6 @@
 # Tailor
 
-This is a work-in-progress CSS minifier and optimizer. The parser and minifier are the most complete but are missing implementations of more advanced CSS syntax while the optimization is in progress.
+This is a work-in-progress CSS minifier and optimizer. The parser and minifier are the most complete and optimization is in progress. It is mostly done but missing implementations for advanced CSS syntax.
 
 ## Usage
 
